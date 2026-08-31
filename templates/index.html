@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>YLD Detection</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 25px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        }
+
+        .upload {
+            text-align: center;
+        }
+
+        input {
+            margin: 20px;
+        }
+
+        button {
+            background: #222;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .result-image {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: auto;
+            border-radius: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: #f1f1f1;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .number {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .yld-rate {
+            margin-top: 25px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .yld-rate-number {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .error {
+            background: #ffe5e5;
+            color: #b00020;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>🌴 YLD Detection System</h1>
+
+    <p class="subtitle">
+        YOLO11-based Healthy vs YLD Detection
+    </p>
+
+
+    <!-- UPLOAD -->
+
+    <div class="card upload">
+
+        <h2>Upload Drone Image</h2>
+
+        {% if error %}
+
+        <div class="error">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <input
+                type="file"
+                name="image"
+                accept="image/*"
+                required
+            >
+
+            <br>
+
+            <button type="submit">
+                Detect YLD
+            </button>
+
+        </form>
+
+    </div>
+
+
+    {% if result_image %}
+
+
+    <!-- RESULT -->
+
+    <div class="card">
+
+        <h2>Detection Result</h2>
+
+        <img
+            src="{{ result_image }}"
+            class="result-image"
+        >
+
+    </div>
+
+
+    <!-- STATISTICS -->
+
+    <div class="card">
+
+        <h2>Analysis</h2>
+
+        <div class="stats">
+
+
+            <div class="stat">
+
+                <div class="number">
+                    {{ total_detections }}
+                </div>
+
+                <div>
+                    Total Plants
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="number">
+                    {{ healthy_count }}
+                </div>
+
+                <div>
+                    Healthy
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="number">
+                    {{ yld_count }}
+                </div>
+
+                <div>
+                    YLD
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- YLD RATE -->
+
+        <div class="yld-rate">
+
+            <div>
+                Estimated YLD Detection Rate
+            </div>
+
+            <div class="yld-rate-number">
+                {{ yld_percentage }}%
+            </div>
+
+            <div>
+                YLD detections / total detected plants
+            </div>
+
+        </div>
+
+
+        <!-- DETECTION TABLE -->
+
+        <h3>Individual Detections</h3>
+
+        {% if detections %}
+
+        <table>
+
+            <tr>
+                <th>#</th>
+                <th>Class</th>
+                <th>Confidence</th>
+            </tr>
+
+
+            {% for detection in detections %}
+
+            <tr>
+
+                <td>
+                    {{ loop.index }}
+                </td>
+
+                <td>
+                    {{ detection.class }}
+                </td>
+
+                <td>
+                    {{ detection.confidence }}%
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        {% else %}
+
+        <p>No plants detected.</p>
+
+        {% endif %}
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>
