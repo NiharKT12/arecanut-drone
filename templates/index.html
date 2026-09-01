@@ -1,314 +1,270 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arecanut YLD Detection</title>
+<style>
+    :root {
+        --bg: #f6f7f9;
+        --card: #ffffff;
+        --ink: #1a1d21;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --healthy: #22c55e;
+        --yld: #ef4444;
+    }
 
-    <meta charset="UTF-8">
+    * { box-sizing: border-box; }
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        margin: 0;
+        padding: 32px 16px 64px;
+        line-height: 1.5;
+    }
 
-    <title>YLD Detection</title>
+    .container { max-width: 940px; margin: 0 auto; }
 
-    <style>
+    header { text-align: center; margin-bottom: 28px; }
+    h1 { margin: 0 0 6px; font-size: 26px; }
+    .subtitle { color: var(--muted); margin: 0; font-size: 14px; }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-            padding: 40px;
-        }
+    .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+    }
 
-        .container {
-            max-width: 1100px;
-            margin: auto;
-        }
+    h2 { font-size: 17px; margin: 0 0 16px; }
 
-        h1 {
-            text-align: center;
-        }
+    .upload { text-align: center; }
+    input[type=file] { margin: 12px 0 18px; max-width: 100%; }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-        }
+    button {
+        background: var(--ink);
+        color: #fff;
+        border: 0;
+        padding: 11px 26px;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+    }
+    button:disabled { opacity: .55; cursor: default; }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 25px;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        }
+    .error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        text-align: left;
+    }
 
-        .upload {
-            text-align: center;
-        }
+    .result-image { width: 100%; border-radius: 8px; display: block; }
 
-        input {
-            margin: 20px;
-        }
+    /* Headline estimate -------------------------------------------------- */
+    .rate { text-align: center; padding: 6px 0 18px; }
+    .rate-value { font-size: 46px; font-weight: 700; line-height: 1.1; }
+    .rate-label { color: var(--muted); font-size: 14px; }
 
-        button {
-            background: #222;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 7px;
-            cursor: pointer;
-        }
+    .bar {
+        display: flex;
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 16px 0 8px;
+        background: var(--line);
+    }
+    .bar-yld { background: var(--yld); }
+    .bar-healthy { background: var(--healthy); }
 
-        .result-image {
-            width: 100%;
-            max-width: 800px;
-            display: block;
-            margin: auto;
-            border-radius: 10px;
-        }
+    .bar-key {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--muted);
+    }
+    .dot {
+        display: inline-block;
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
 
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
+    .note {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+    }
 
-        .stat {
-            background: #f1f1f1;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 140px;
-        }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-weight: 500; font-size: 13px; }
+    .tag { font-weight: 600; }
+    .tag-healthy { color: var(--healthy); }
+    .tag-yld { color: var(--yld); }
 
-        .number {
-            font-size: 30px;
-            font-weight: bold;
-        }
-
-        .yld-rate {
-            margin-top: 25px;
-            padding: 20px;
-            background: #fff3cd;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .yld-rate-number {
-            font-size: 36px;
-            font-weight: bold;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .error {
-            background: #ffe5e5;
-            color: #b00020;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-    </style>
-
+    .scroll { max-height: 340px; overflow-y: auto; }
+</style>
 </head>
-
-
 <body>
-
 <div class="container">
 
-    <h1>🌴 YLD Detection System</h1>
-
-    <p class="subtitle">
-        YOLO11-based Healthy vs YLD Detection
-    </p>
-
-
-    <!-- UPLOAD -->
+    <header>
+        <h1>Arecanut YLD Detection</h1>
+        <p class="subtitle">YOLO11s &middot; healthy vs yellow leaf disease</p>
+    </header>
 
     <div class="card upload">
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
 
-        <h2>Upload Drone Image</h2>
-
-        {% if error %}
-
-        <div class="error">
-            {{ error }}
-        </div>
-
-        {% endif %}
-
-
-        <form
-            method="POST"
-            enctype="multipart/form-data"
-        >
-
-            <input
-                type="file"
-                name="image"
-                accept="image/*"
-                required
-            >
-
+        <h2>Upload a drone image</h2>
+        <form method="POST" enctype="multipart/form-data" id="form">
+            <input type="file" name="image" id="file" accept="image/*" required>
             <br>
-
-            <button type="submit">
-                Detect YLD
-            </button>
-
+            <!-- id must NOT be "submit": form controls are exposed as
+                 properties of the form by id, so id="submit" shadows
+                 HTMLFormElement.submit() and form.submit() throws. -->
+            <button type="submit" id="analyse">Analyse</button>
         </form>
-
     </div>
-
 
     {% if result_image %}
 
-
-    <!-- RESULT -->
-
     <div class="card">
+        <h2>Estimated plot composition</h2>
 
-        <h2>Detection Result</h2>
+        <div class="rate">
+            <div class="rate-value" style="color: var(--yld)">{{ yld_percentage }}%</div>
+            <div class="rate-label">of palms affected by YLD</div>
+        </div>
 
-        <img
-            src="{{ result_image }}"
-            class="result-image"
-        >
+        <div class="bar">
+            <div class="bar-yld" style="width: {{ yld_percentage }}%"></div>
+            <div class="bar-healthy" style="width: {{ 100 - yld_percentage }}%"></div>
+        </div>
+        <div class="bar-key">
+            <span><span class="dot" style="background: var(--yld)"></span>
+                  ~{{ estimated_yld }} YLD</span>
+            <span><span class="dot" style="background: var(--healthy)"></span>
+                  ~{{ estimated_healthy }} healthy</span>
+        </div>
 
+        <div class="note">
+            The model marked <strong>{{ detected_total }}</strong> palms
+            ({{ detected_healthy }} healthy, {{ detected_yld }} YLD). The estimate
+            above rescales those counts by each class's measured detection rate,
+            because the model finds healthy palms less reliably than diseased
+            ones &mdash; so the boxes drawn below are fewer than the estimate.
+            Calibrated on 219 validation instances; it corrects average bias
+            rather than any single image.
+        </div>
     </div>
 
-
-    <!-- STATISTICS -->
+    <div class="card">
+        <h2>Detections</h2>
+        <img src="{{ result_image }}" class="result-image" alt="Detection result">
+    </div>
 
     <div class="card">
-
-        <h2>Analysis</h2>
-
-        <div class="stats">
-
-
-            <div class="stat">
-
-                <div class="number">
-                    {{ total_detections }}
-                </div>
-
-                <div>
-                    Total Plants
-                </div>
-
-            </div>
-
-
-            <div class="stat">
-
-                <div class="number">
-                    {{ healthy_count }}
-                </div>
-
-                <div>
-                    Healthy
-                </div>
-
-            </div>
-
-
-            <div class="stat">
-
-                <div class="number">
-                    {{ yld_count }}
-                </div>
-
-                <div>
-                    YLD
-                </div>
-
-            </div>
-
-
-        </div>
-
-
-        <!-- YLD RATE -->
-
-        <div class="yld-rate">
-
-            <div>
-                Estimated YLD Detection Rate
-            </div>
-
-            <div class="yld-rate-number">
-                {{ yld_percentage }}%
-            </div>
-
-            <div>
-                YLD detections / total detected plants
-            </div>
-
-        </div>
-
-
-        <!-- DETECTION TABLE -->
-
-        <h3>Individual Detections</h3>
-
+        <h2>Individual detections</h2>
         {% if detections %}
-
-        <table>
-
-            <tr>
-                <th>#</th>
-                <th>Class</th>
-                <th>Confidence</th>
-            </tr>
-
-
-            {% for detection in detections %}
-
-            <tr>
-
-                <td>
-                    {{ loop.index }}
-                </td>
-
-                <td>
-                    {{ detection.class }}
-                </td>
-
-                <td>
-                    {{ detection.confidence }}%
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </table>
-
+        <div class="scroll">
+            <table>
+                <tr><th>#</th><th>Class</th><th>Confidence</th></tr>
+                {% for detection in detections %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="tag tag-{{ detection.class }}">{{ detection.class }}</td>
+                    <td>{{ detection.confidence }}%</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
         {% else %}
-
-        <p>No plants detected.</p>
-
+        <p style="color: var(--muted)">No palms detected in this image.</p>
         {% endif %}
-
     </div>
 
     {% endif %}
-
 </div>
 
-</body>
+<script>
+// Drone stills routinely exceed 8 MB, but Vercel caps a request body at ~4.5 MB.
+// Downscale in the browser before upload; the model sees 640px anyway, so
+// capping the long edge at 1600px costs no accuracy.
+(function () {
+    var MAX_EDGE = 1600, form = document.getElementById('form'),
+        input = document.getElementById('file'), button = document.getElementById('analyse'),
+        resized = false;
 
+    // Call the real method off the prototype: any control named or id'd
+    // "submit" would otherwise shadow it on the form instance.
+    function reallySubmit() {
+        HTMLFormElement.prototype.submit.call(form);
+    }
+
+    function giveUp(message) {
+        resized = true;
+        button.disabled = false;
+        button.textContent = message || 'Analyse';
+        reallySubmit();
+    }
+
+    form.addEventListener('submit', function (event) {
+        var file = input.files[0];
+        if (!file || resized) return;          // nothing chosen, or already shrunk
+
+        event.preventDefault();
+        button.disabled = true;
+        button.textContent = 'Preparing…';
+
+        var image = new Image(), url = URL.createObjectURL(file);
+
+        image.onload = function () {
+            URL.revokeObjectURL(url);
+            try {
+                var scale = Math.min(1, MAX_EDGE / Math.max(image.width, image.height));
+                var canvas = document.createElement('canvas');
+                canvas.width = Math.round(image.width * scale);
+                canvas.height = Math.round(image.height * scale);
+                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(function (blob) {
+                    try {
+                        // Keep the original if the canvas gave us nothing useful.
+                        if (blob) {
+                            var data = new DataTransfer();
+                            data.items.add(new File([blob], 'upload.jpg', { type: 'image/jpeg' }));
+                            input.files = data.files;
+                        }
+                    } catch (err) {
+                        // DataTransfer is unavailable in a few browsers; the
+                        // original file is still attached, so just send it.
+                    }
+                    giveUp();
+                }, 'image/jpeg', 0.9);
+            } catch (err) {
+                giveUp();               // never strand the user on "Preparing…"
+            }
+        };
+
+        image.onerror = function () {   // not decodable here; let the server judge
+            URL.revokeObjectURL(url);
+            giveUp();
+        };
+
+        image.src = url;
+    });
+})();
+</script>
+</body>
 </html>

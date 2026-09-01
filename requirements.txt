@@ -1,4 +1,4 @@
 flask
-ultralytics
-opencv-python-headless
+onnxruntime
 numpy
+pillow

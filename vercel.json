@@ -2,7 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{tests/**,__tests__/**,*.ipynb,README*,train/**,valid/**,test/**,static/**,uploads/**}"
+      "includeFiles": "{templates/**,best.onnx}",
+      "excludeFiles": "{dataset/**,dataset_aug/**,dataset_bal/**,a/**,runs/**,notebooks/**,scripts/**,*.pt}"
     }
-  }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
 }
