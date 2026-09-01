@@ -209,7 +209,11 @@ def encode(image):
     return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
+# Both paths are registered on purpose. Vercel rewrites every request to
+# /api/index and forwards THAT path to the function, so a bare "/" route alone
+# serves Flask's own 404 in production while working fine locally.
 @app.route("/", methods=["GET", "POST"])
+@app.route("/api/index", methods=["GET", "POST"])
 def index():
     if request.method == "GET":
         return render_template("index.html")
@@ -235,6 +239,16 @@ def index():
         ],
         **stats,
     )
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    """Single-page app: show the uploader rather than a dead end.
+
+    Also a safety net if Vercel ever forwards a path other than the two
+    registered above.
+    """
+    return render_template("index.html"), 404
 
 
 @app.errorhandler(413)

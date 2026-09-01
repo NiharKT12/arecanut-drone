@@ -156,6 +156,13 @@ upload. The model sees 640 px regardless, so this costs no accuracy.
 NMS is **class-agnostic**. With per-class NMS one palm can survive as both a
 `healthy` and a `yld` box, inflating the total and corrupting the rate.
 
+> **Routing gotcha:** `vercel.json` rewrites `/(.*)` to `/api/index`, and Vercel
+> forwards the *rewritten* path to the function. A Flask app declaring only
+> `@app.route("/")` therefore serves its own 404 in production while working
+> perfectly locally. `api/index.py` registers both `/` and `/api/index`, plus a
+> 404 handler that falls back to the uploader. If you see Flask's "The requested
+> URL was not found on the server", this is the cause — not a bundling problem.
+
 ---
 
 ## Limitations
