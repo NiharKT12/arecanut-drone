@@ -222,11 +222,11 @@ def camera_response(upload):
     detections = detect(image)
     return jsonify(
         {
-            "image": encode(draw(image, detections)),
             "detections": [
                 {
                     "class": detection["name"],
                     "confidence": round(detection["confidence"] * 100, 1),
+                    "box": [round(float(value), 1) for value in detection["box"]],
                 }
                 for detection in detections
             ],
