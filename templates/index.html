@@ -67,6 +67,14 @@
     .dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
     .note { margin-top: 23px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
     .result-image { display: block; width: 100%; max-height: 410px; object-fit: contain; background: #dfe8e0; }
+    .camera-panel { display: none; margin-top: 18px; }
+    .camera-panel.active { display: block; }
+    .camera-stage { position: relative; overflow: hidden; background: #102c35; }
+    .camera-stage video, .camera-stage img { display: block; width: 100%; }
+    .camera-stage img { position: absolute; inset: 0; height: 100%; object-fit: contain; }
+    .camera-controls { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+    .camera-controls button { width: auto; }
+    .camera-status { margin: 0; color: var(--muted); font: 11px 'DM Mono', monospace; }
     .scroll { max-height: 340px; overflow-y: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 10px 6px; border-bottom: 1px solid var(--line); text-align: left; }
@@ -85,7 +93,7 @@
 <main class="shell">
     <nav class="topbar"><div class="brand"><span class="brand-mark">C/</span> Canopy intelligence</div><div class="top-meta">FIELD SYSTEM / 01</div></nav>
     <section class="hero">
-        <div><div class="eyebrow"><span class="pulse"></span> Drone crop health analysis</div><h1>See the plot.<br><em>Know the risk.</em></h1><p class="intro">Upload an aerial image to map arecanut palms and estimate the share affected by yellow leaf disease.</p>{% if error %}<div class="error">{{ error }}</div>{% endif %}<form method="POST" enctype="multipart/form-data" id="form" class="hero-action"><label class="sr-only" for="file">Choose a drone image</label><input type="file" name="image" id="file" accept="image/*" required><button type="button" id="choose">Choose image <span aria-hidden="true">&rarr;</span></button><button type="submit" id="analyse" hidden>Run analysis</button><span class="file-name" id="file-name">No file selected</span></form></div>
+        <div><div class="eyebrow"><span class="pulse"></span> Drone crop health analysis</div><h1>See the plot.<br><em>Know the risk.</em></h1><p class="intro">Upload an aerial image or open your camera to detect arecanut palms and yellow leaf disease in real time.</p>{% if error %}<div class="error">{{ error }}</div>{% endif %}<form method="POST" enctype="multipart/form-data" id="form" class="hero-action"><label class="sr-only" for="file">Choose a drone image</label><input type="file" name="image" id="file" accept="image/*" required><button type="button" id="choose">Choose image <span aria-hidden="true">&rarr;</span></button><button type="submit" id="analyse" hidden>Run analysis</button><span class="file-name" id="file-name">No file selected</span><button type="button" id="open-camera">Open camera</button></form></div>
         <div class="orbital" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbital-label">YOLO11s / ONNX</div></div>
     </section>
     {% if result_image %}
@@ -97,6 +105,17 @@
         <div class="panel"><div class="panel-head"><h2>Individual detections</h2><span class="mono">{{ detected_total }} objects</span></div>{% if detections %}<div class="scroll"><table><tr><th>#</th><th>Class</th><th>Confidence</th></tr>{% for detection in detections %}<tr><td>{{ loop.index }}</td><td class="tag tag-{{ detection.class }}">{{ detection.class }}</td><td>{{ detection.confidence }}%</td></tr>{% endfor %}</table></div>{% else %}<p style="color:var(--muted)">No palms detected in this image.</p>{% endif %}</div>
     </section>
     {% endif %}
+    <section class="camera-panel panel" id="camera-panel">
+        <div class="panel-head"><h2>Live camera detection</h2><span class="mono">Browser camera</span></div>
+        <div class="camera-stage">
+            <video id="camera-video" autoplay muted playsinline></video>
+            <img id="camera-result" alt="Live detection result">
+        </div>
+        <div class="camera-controls">
+            <button type="button" id="close-camera">Close camera</button>
+            <p class="camera-status" id="camera-status">Requesting camera access…</p>
+        </div>
+    </section>
 </main>
 
 <script>
@@ -178,6 +197,83 @@
 
         image.src = url;
     });
+})();
+
+(function () {
+    var openButton = document.getElementById('open-camera');
+    var closeButton = document.getElementById('close-camera');
+    var panel = document.getElementById('camera-panel');
+    var video = document.getElementById('camera-video');
+    var result = document.getElementById('camera-result');
+    var status = document.getElementById('camera-status');
+    var stream = null, timer = null, busy = false;
+
+    if (!openButton) return;
+
+    function stopCamera() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        if (stream) stream.getTracks().forEach(function (track) { track.stop(); });
+        stream = null;
+        video.srcObject = null;
+        panel.classList.remove('active');
+    }
+
+    function analyseFrame() {
+        if (busy || !video.videoWidth) return;
+        busy = true;
+        var canvas = document.createElement('canvas');
+        var scale = Math.min(1, 640 / Math.max(video.videoWidth, video.videoHeight));
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function (blob) {
+            if (!blob) {
+                busy = false;
+                return;
+            }
+            var data = new FormData();
+            data.append('frame', blob, 'camera.jpg');
+            // Use the function's canonical Vercel path. Vercel rewrites all
+            // routes to /api/index before Flask receives the request.
+            fetch('/api/index', { method: 'POST', body: data })
+                .then(function (response) {
+                    if (!response.ok) throw new Error('Server could not analyse the frame.');
+                    return response.json();
+                })
+                .then(function (payload) {
+                    result.src = payload.image;
+                    status.textContent = 'Live · ' + payload.detected_total + ' palms · YLD ' + payload.yld_percentage + '%';
+                })
+                .catch(function (error) {
+                    status.textContent = error.message;
+                })
+                .finally(function () { busy = false; });
+        }, 'image/jpeg', 0.72);
+    }
+
+    openButton.addEventListener('click', function () {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            status.textContent = 'Camera access is not supported by this browser.';
+            panel.classList.add('active');
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(function (newStream) {
+                stream = newStream;
+                video.srcObject = stream;
+                panel.classList.add('active');
+                status.textContent = 'Camera active · analysing frames…';
+                timer = window.setInterval(analyseFrame, 500);
+            })
+            .catch(function () {
+                panel.classList.add('active');
+                status.textContent = 'Camera access was denied or unavailable.';
+            });
+    });
+
+    closeButton.addEventListener('click', stopCamera);
+    window.addEventListener('beforeunload', stopCamera);
 })();
 </script>
 </body>

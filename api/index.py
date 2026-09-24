@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import onnxruntime as ort
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 from PIL import Image, ImageDraw
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -209,6 +209,32 @@ def encode(image):
     return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
+def camera_response(upload):
+    """Return JSON for one browser camera frame."""
+    if upload is None:
+        return jsonify({"error": "Camera frame was not provided."}), 400
+
+    try:
+        image = Image.open(io.BytesIO(upload.read())).convert("RGB")
+    except Exception:
+        return jsonify({"error": "Could not read the camera frame."}), 400
+
+    detections = detect(image)
+    return jsonify(
+        {
+            "image": encode(draw(image, detections)),
+            "detections": [
+                {
+                    "class": detection["name"],
+                    "confidence": round(detection["confidence"] * 100, 1),
+                }
+                for detection in detections
+            ],
+            **summarise(detections),
+        }
+    )
+
+
 # Both paths are registered on purpose. Vercel rewrites every request to
 # /api/index and forwards THAT path to the function, so a bare "/" route alone
 # serves Flask's own 404 in production while working fine locally.
@@ -217,6 +243,12 @@ def encode(image):
 def index():
     if request.method == "GET":
         return render_template("index.html")
+
+    # Vercel rewrites /api/camera-detect to /api/index before Flask sees it.
+    # Dispatch by multipart field so camera requests remain distinct from
+    # regular image uploads on the rewritten path.
+    if "frame" in request.files:
+        return camera_response(request.files["frame"])
 
     upload = request.files.get("image")
     if upload is None or upload.filename == "":
@@ -239,6 +271,12 @@ def index():
         ],
         **stats,
     )
+
+
+@app.route("/camera-detect", methods=["POST"])
+@app.route("/api/camera-detect", methods=["POST"])
+def camera_detect():
+    return camera_response(request.files.get("frame"))
 
 
 @app.errorhandler(404)
