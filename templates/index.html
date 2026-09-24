@@ -87,13 +87,49 @@
     @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(44,154,104,0); } 100% { box-shadow: 0 0 0 0 rgba(44,154,104,0); } }
     @media (max-width: 780px) { .shell { padding: 20px 17px 35px; }.top-meta { display: none; }.hero, .result-grid { grid-template-columns: 1fr; gap: 34px; min-height: auto; padding-top: 70px; }.orbital { width: 290px; height: 290px; order: -1; }.hero { padding-bottom: 35px; } h1 { font-size: 56px; }.panel { padding: 21px; }.hero-action { flex-wrap: wrap; } }
     @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+    /* Minimal application layout */
+    body { background: #f7f8f6; }
+    body:before, .orbital { display: none; }
+    .shell { max-width: 920px; padding: 28px 22px 48px; }
+    .topbar { padding-bottom: 42px; }
+    .top-meta { color: #7c847f; }
+    .hero { display: block; min-height: auto; padding: 0 0 22px; }
+    .hero > div:first-child { max-width: 680px; margin: 0 auto; text-align: center; }
+    .eyebrow { justify-content: center; color: #527b62; }
+    .pulse { display: none; }
+    h1 { max-width: none; margin: 16px 0 12px; color: #1c2a22; font-size: clamp(36px, 6vw, 58px); letter-spacing: -.06em; }
+    h1 em { color: #4d8b64; }
+    .intro { max-width: 520px; margin: 0 auto; color: #68736c; font-size: 15px; }
+    .hero-action { justify-content: center; margin: 26px auto 0; padding: 18px; background: #fff; border: 1px solid #e1e6e1; border-radius: 8px; }
+    .hero-action button { min-width: 142px; padding: 11px 16px; font-size: 13px; }
+    .hero-action button:last-of-type { color: #fff; background: #315d43; }
+    .file-name { color: #68736c; }
+    .results { max-width: 760px; margin: 22px auto 0; }
+    .result-grid { grid-template-columns: 1fr 1.35fr; gap: 14px; }
+    .panel { padding: 20px; border-color: #e1e6e1; border-radius: 8px; box-shadow: none; animation: none; }
+    .panel-head { margin-bottom: 16px; }
+    h2 { font-size: 16px; }
+    .rate-value { font-size: 52px; }
+    .camera-panel { max-width: 760px; margin: 14px auto 0; }
+    .camera-stage { border-radius: 5px; }
+    .camera-controls button { padding: 10px 16px; }
+    .camera-status { font-size: 10px; }
+    @media (max-width: 780px) {
+        .shell { padding: 22px 16px 36px; }
+        .topbar { padding-bottom: 34px; }
+        .hero-action { align-items: stretch; flex-direction: column; }
+        .hero-action button { width: 100%; }
+        .hero-action .file-name { order: -1; text-align: center; }
+        .result-grid { gap: 14px; }
+    }
 </style>
 </head>
 <body>
 <main class="shell">
     <nav class="topbar"><div class="brand"><span class="brand-mark">C/</span> Canopy intelligence</div><div class="top-meta">FIELD SYSTEM / 01</div></nav>
     <section class="hero">
-        <div><div class="eyebrow"><span class="pulse"></span> Drone crop health analysis</div><h1>See the plot.<br><em>Know the risk.</em></h1><p class="intro">Upload an aerial image or open your camera to detect arecanut palms and yellow leaf disease in real time.</p>{% if error %}<div class="error">{{ error }}</div>{% endif %}<form method="POST" enctype="multipart/form-data" id="form" class="hero-action"><label class="sr-only" for="file">Choose a drone image</label><input type="file" name="image" id="file" accept="image/*" required><button type="button" id="choose">Choose image <span aria-hidden="true">&rarr;</span></button><button type="submit" id="analyse" hidden>Run analysis</button><span class="file-name" id="file-name">No file selected</span><button type="button" id="open-camera">Open camera</button></form></div>
+        <div><div class="eyebrow"><span class="pulse"></span> Arecanut health detection</div><h1>Detect <em>YLD</em> simply.</h1><p class="intro">Upload an image or use your camera to identify healthy and yellow leaf disease palms.</p>{% if error %}<div class="error">{{ error }}</div>{% endif %}<form method="POST" enctype="multipart/form-data" id="form" class="hero-action"><label class="sr-only" for="file">Choose a drone image</label><input type="file" name="image" id="file" accept="image/*" required><button type="button" id="choose">Choose image <span aria-hidden="true">&rarr;</span></button><button type="submit" id="analyse" hidden>Run analysis</button><span class="file-name" id="file-name">No file selected</span><button type="button" id="open-camera">Open camera</button></form></div>
         <div class="orbital" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbital-label">YOLO11s / ONNX</div></div>
     </section>
     {% if result_image %}
